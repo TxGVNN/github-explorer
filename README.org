@@ -29,12 +29,13 @@ Explore public Github repositories like [[https://github.com/ahungry/md4rd][md4r
 -UU-:**- *Github:melpa/melpa:.* --------------------------
   #+END_SRC
 ** Enter a folder (tree)
+#+BEGIN_SRC txt
 [-] /melpa/melpa
  |--[-] .github
  |   |----- PULL_REQUEST_TEMPLATE.md
  |----- .gitignore
  |----- .travis.yml
-
+   #+END_SRC
 ** Explore a file (blob)
 Using raw.github.com and chang to major mode of file type.
 
@@ -51,3 +52,5 @@ Example: ~README.md~
 #+BEGIN_SRC elisp
 (( require) ( hierarchy)
 #+END_SRC
+
+I would like to use ~gh.el~ as backend, but that package does't [[https://github.com/sigma/gh.el/issues/37][allow unauthenticated requests]]
