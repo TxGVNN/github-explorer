@@ -1,0 +1,53 @@
+* The idea (POC)
+Explore public Github repositories like [[https://github.com/ahungry/md4rd][md4rd]] for Reddit
+
+** Explore a repository
+#+BEGIN_SRC txt
+[-] /melpa/melpa
+ |--[+] .github
+ |----- .gitignore
+ |----- .travis.yml
+ |----- CONTRIBUTING.org
+ |----- Cask
+ |----- LICENSE.md
+ |----- Makefile
+ |----- README.md
+ |--[+] docker
+ |--[+] html-stable
+ |--[+] html
+ |--[+] logo
+ |--[+] package-build
+ |--[+] packages-stable
+ |--[+] packages
+ |--[+] recipes
+ |----- run-travis-ci.sh
+ |--[+] scripts
+ |--[+] service
+ |----- travis-changed-files
+ |--[+] working
+
+-UU-:**- *Github:melpa/melpa:.* --------------------------
+  #+END_SRC
+** Enter a folder (tree)
+[-] /melpa/melpa
+ |--[-] .github
+ |   |----- PULL_REQUEST_TEMPLATE.md
+ |----- .gitignore
+ |----- .travis.yml
+
+** Explore a file (blob)
+Using raw.github.com and chang to major mode of file type.
+
+
+Example: ~README.md~
+#+BEGIN_SRC txt
+...
+
+-UU-:**- *Github:melpa/melpa:README.md* --(Markdown)------
+#+END_SRC
+
+
+* Package-Requires
+#+BEGIN_SRC elisp
+(( require) ( hierarchy)
+#+END_SRC
