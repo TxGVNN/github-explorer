@@ -5,70 +5,80 @@
 ;; * TODO create github-mode (major-mode)
 
 ;; DEBUG
-(setq request-log-level 'trace)
-(setq request-message-level 'trace)
-(setq request-curl-options '("-k"))
+;; (setq request-log-level 'debug)
+;; (setq request-message-level 'debug)
+;; (setq request-curl-options '("-k"))
 
-(defvar github-buffer-temp)
 ;; * TODO will also accept a full link https://github...
 ;; * TODO entering to github-mode
-(defun github-go (&optional repo)
+
+(defvar github-buffer-temp)
+(defvar github-repository)
+
+(defun github-repo (&optional repo)
   "Go REPO github."
   (interactive (list (thing-at-point 'symbol)))
-  (setq repo (read-string "Repository: " repo))
-  (github-tree repo "master"))
-;; (github-go "melpa/melpa")
+  (setq github-repository (read-string "Repository: " repo))
+  (github--tree (format "https://api.github.com/repos/%s/git/trees/%s" github-repository "master") "/"))
+;; (github-repo "melpa/melpa")
 
-(defun github-tree (&optional repo tree)
-  "Get TREE of REPO github.
-This function will create *GITHUB:REPO:* buffer"
-  (let (url)
-    (setq url (format "https://api.github.com/repos/%s/git/trees/%s" repo tree))
-    (setq github-buffer-temp (format "*Github:%s:*" repo))
-    (request
-     url
-     :parser 'buffer-string
-     :success
-     (cl-function (lambda (&key data &allow-other-keys)
-                    (when data
-                      (with-current-buffer (get-buffer-create github-buffer-temp)
-                        (let (gh-object)
-                          (erase-buffer)
-                          (insert data)
-                          (pop-to-buffer (current-buffer))
-                          (beginning-of-buffer)
-                          (setq gh-object (json-read))
-                          (erase-buffer)
-                          (github--render-object gh-object))
-                        ))))
-     :error
-     (cl-function (lambda (&key error-thrown &allow-other-keys&rest _)
-                    (message "Got error: %S" error-thrown)))
-     :complete (lambda (&rest _) (message "Finished!")))))
+(defun github-go()
+  "Go to path in buffer Github tree."
+  (interactive)
+  (let (url path (pos 0) matches repo base-path)
+    (setq item (get-text-property (line-beginning-position) 'invisible))
+    (setq url (cdr (assoc 'url item)))
+    (setq path (cdr (assoc 'path item)))
 
-(defun github-raw(&optional path)
-  "Get raw of PATH in *GITHUB:REPO* buffer.
-This function is have to called in *GITHUB:REPO* buffer"
-  (interactive (list (thing-at-point 'filename)))
-  (setq path (read-string "Path: " path))
-  (let ((pos 0) matches repo)
     (setq repo (buffer-name))
-    (while (string-match ":\\(.+\\):" repo pos)
+    (while (string-match ":\\(.+\\)\\*" repo pos)
       (setq matches (concat (match-string 0 repo)))
       (setq pos (match-end 0)))
-    (setq repo (substring matches 1 (- (length matches) 1)))
-    (github--raw repo path)))
-;; (github-tree "melpa/melpa" "2f6ab4e3eebf90341b56e0d672471ef017d10c4c")
+    (setq base-path (substring matches 1 (- (length matches) 1)))
+    (setq repo (car (split-string base-path ":")))
+    (setq path (format "%s%s"  (car (cdr (split-string base-path ":"))) path))
+    (if (string= (cdr (assoc 'type item)) "tree")
+        (setq path (concat path "/")))
+    (message "%s" path)
+    (if (string= (cdr (assoc 'type item)) "tree")
+        (github--tree url path)
+      (github--raw repo path))))
+
+(defun github--tree (url path)
+  "Get trees by URL of PATH github.
+This function will create *Github:REPO:* buffer"
+  (setq github-buffer-temp (format "*Github:%s:%s*" github-repository path))
+  (request
+   url
+   :parser 'buffer-string
+   :success
+   (cl-function (lambda (&key data &allow-other-keys)
+                  (when data
+                    (with-current-buffer (get-buffer-create github-buffer-temp)
+                      (let (gh-object)
+                        (erase-buffer)
+                        (insert data)
+                        (pop-to-buffer (current-buffer))
+                        (beginning-of-buffer)
+                        (setq gh-object (json-read))
+                        (erase-buffer)
+                        (github--render-object gh-object)
+                        (read-only-mode)
+                        )
+                      ))))
+   :error
+   (cl-function (lambda (&key error-thrown &allow-other-keys&rest _)
+                  (message "Got error: %S" error-thrown)))
+   :complete (lambda (&rest _) (message "Finished!"))))
 
 ;; * QUESTION support revision? only master?
 (defun github--raw (&optional repo path)
   "Get raw of PATH in REPO github."
   (let (url)
-    (setq url (format "https://raw.githubusercontent.com/%s/master/%s" repo path))
+    (setq url (format "https://raw.githubusercontent.com/%s/master%s" repo path))
     (setq github-buffer-temp (format "*Github:%s:%s*" repo path))
     (request
      url
-     ;; "https://api.github.com/repos/txgvnn/dots/git/trees/master"
      :parser 'buffer-string
      :success
      (cl-function (lambda (&key data &allow-other-keys)
@@ -92,8 +102,11 @@ This function is have to called in *GITHUB:REPO* buffer"
     (while (< i (length trees))
       (setq item (elt trees i))
       (if (string= (cdr (assoc 'type item)) "tree")
-          (insert (format "[+] %s\n" (cdr (assoc 'path item))))
-        (insert (format "--- %s\n" (cdr (assoc 'path item)))))
+          (insert (format "   [+] %s" (cdr (assoc 'path item))))
+        (insert (format "   --- %s" (cdr (assoc 'path item)))))
+      (put-text-property (line-beginning-position) (+ (line-beginning-position) 1) 'invisible item)
+      (end-of-line)
+      (insert "\n")
       (setq i (+ i 1))
       )
     )
