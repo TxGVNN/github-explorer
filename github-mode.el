@@ -19,22 +19,25 @@
   :type 'string
   :group 'github)
 
+(defvar github-mode-map nil
+  "Keymap for Github major mode.")
+
 (defface github-directory-face
-  '((t (:inherit (dired-directory-face bold))))
+  '((t (:inherit font-lock-function-name-face)))
   "Face for a directory.")
 
-
 (defvar github-buffer-temp)
+
 (defvar github-repository)
 
-(defun github-repo (&optional repo)
+(defun github-go (&optional repo)
   "Go REPO github."
   (interactive (list (thing-at-point 'symbol)))
   (setq github-repository (read-string "Repository: " repo))
   (github--tree (format "https://api.github.com/repos/%s/git/trees/%s" github-repository "master") "/"))
 ;; (github-repo "melpa/melpa")
 
-(defun github-go()
+(defun github-go-at-point()
   "Go to path in buffer Github tree."
   (interactive)
   (let (url path (pos 0) matches repo base-path)
@@ -108,26 +111,38 @@ This function will create *Github:REPO:* buffer"
 
 (defun github--render-object (gh-object)
   "Render the GH-OBJECT."
-  (let (item i trees)
+  (let (item i trees path)
     (setq trees (cdr (assoc 'tree gh-object)))
     (setq i 0)
     (while (< i (length trees))
       (setq item (elt trees i))
-      (if (string= (cdr (assoc 'type item)) "tree")
-          (insert (format "   [+] %s" (cdr (assoc 'path item))))
-        (insert (format "   --- %s" (cdr (assoc 'path item)))))
+      (setq path (cdr (assoc 'path item)))
+      (if (string= (cdr (assoc 'type item)) "blob")
+          (insert (format "   --- %s" path))
+        (insert (format "   [+] %s" path))
+        (left-char (length path))
+        (put-text-property (point) (+ (length path) (point)) 'face 'github-directory-face)
+        )
       (put-text-property (line-beginning-position) (+ (line-beginning-position) 1) 'invisible item)
       (end-of-line)
       (insert "\n")
-      (setq i (+ i 1))
-      )
-    ))
+      (setq i (+ i 1)))))
 
 ;;;###autoload
 (define-derived-mode github-mode fundamental-mode github-mode-name
   "Major mode for exploring Github repository on the fly"
   (setq buffer-auto-save-file-name nil
         buffer-read-only t)
+  ;; Mode map
+  (if (not github-mode-map)
+      (progn
+        (setq github-mode-map (make-sparse-keymap))
+        (define-key github-mode-map (kbd "o") 'github-go-at-point)
+        (define-key github-mode-map (kbd "RET") 'github-go-at-point)
+        (define-key github-mode-map (kbd "n") 'next-line)
+        (define-key github-mode-map (kbd "p") 'previous-line)))
+  (use-local-map github-mode-map)
   )
 
 (provide 'github)
+;;; github-mode.el ends here

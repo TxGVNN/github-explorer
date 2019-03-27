@@ -1,12 +1,17 @@
 * Have a look
 
 #+BEGIN_SRC elisp
-(github-repo "melpa/melpa")
+M-x github-go "melpa/melpa"
 
-;; In each item
-M-x: github-go
+
+  ;; Mode map
+  (define-key github-mode-map (kbd "o") 'github-go-at-point)
+  (define-key github-mode-map (kbd "RET") 'github-go-at-point)
+  (define-key github-mode-map (kbd "n") 'next-line)
+  (define-key github-mode-map (kbd "p") 'previous-line)
 
 #+END_SRC
+
 
 * The idea (POC)
 Explore public Github repositories like [[https://github.com/ahungry/md4rd][md4rd]] for Reddit
