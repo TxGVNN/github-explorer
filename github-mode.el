@@ -2,15 +2,27 @@
 
 (require 'request)
 
-;; * TODO create github-mode (major-mode)
-
-;; DEBUG
-;; (setq request-log-level 'debug)
-;; (setq request-message-level 'debug)
-;; (setq request-curl-options '("-k"))
-
 ;; * TODO will also accept a full link https://github...
-;; * TODO entering to github-mode
+
+(defgroup github nil
+  "Major mode of Github configuration file."
+  :group 'languages
+  :prefix "github-")
+
+(defcustom github-mode-hook nil
+  "*Hook run by `github-mode'."
+  :type 'hook
+  :group 'github)
+
+(defcustom github-mode-name "Github"
+  "*Modeline of `github-mode'."
+  :type 'string
+  :group 'github)
+
+(defface github-directory-face
+  '((t (:inherit (dired-directory-face bold))))
+  "Face for a directory.")
+
 
 (defvar github-buffer-temp)
 (defvar github-repository)
@@ -63,7 +75,7 @@ This function will create *Github:REPO:* buffer"
                         (setq gh-object (json-read))
                         (erase-buffer)
                         (github--render-object gh-object)
-                        (read-only-mode)
+                        (github-mode)
                         )
                       ))))
    :error
@@ -109,7 +121,13 @@ This function will create *Github:REPO:* buffer"
       (insert "\n")
       (setq i (+ i 1))
       )
-    )
+    ))
+
+;;;###autoload
+(define-derived-mode github-mode fundamental-mode github-mode-name
+  "Major mode for exploring Github repository on the fly"
+  (setq buffer-auto-save-file-name nil
+        buffer-read-only t)
   )
 
 (provide 'github)
