@@ -1,3 +1,15 @@
+;;; github-mode.el --- Explore a Github repository on the fly -*- lexical-binding: t -*-
+
+;; Copyright (C) 2019 Giap Tran <txgvnn@gmail.com>
+
+;; Author: Giap Tran <txgvnn@gmail.com>
+;; URL: https://github.com/TxGVNN/github-mode
+;; Version: 0.1
+;; Package-Requires: ((emacs "24.4") (request "0.1.0"))
+
+;;; Commentary:
+;; M-x github-go "txgvnn/github-mode"
+
 ;;; Code:
 
 (require 'request)
@@ -144,5 +156,6 @@ This function will create *Github:REPO:* buffer"
   (use-local-map github-mode-map)
   )
 
-(provide 'github)
+
+(provide 'github-mode)
 ;;; github-mode.el ends here
