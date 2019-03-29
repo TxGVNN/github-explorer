@@ -1,4 +1,4 @@
-* Have a look
+* Usage
 
 #+BEGIN_SRC elisp
 M-x github-go "melpa/melpa"
@@ -13,7 +13,7 @@ M-x github-go "melpa/melpa"
 #+END_SRC
 
 
-* The idea (POC)
+* The idea
 Explore public Github repositories like [[https://github.com/ahungry/md4rd][md4rd]] for Reddit
 
 ** Explore a repository
@@ -61,11 +61,3 @@ Example: ~README.md~
 
 -UU-:**- *Github:melpa/melpa:README.md* --(Markdown)------
 #+END_SRC
-
-
-* Package-Requires
-#+BEGIN_SRC elisp
-((request) ( hierarchy)
-#+END_SRC
-
-I would like to use ~gh.el~ as backend, but that package does't [[https://github.com/sigma/gh.el/issues/37][allow unauthenticated requests]]
