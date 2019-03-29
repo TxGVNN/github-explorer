@@ -74,7 +74,7 @@
 (defun github--tree (url path)
   "Get trees by URL of PATH github.
 This function will create *Github:REPO:* buffer"
-  (setq github-buffer-temp (format "*Github:%s:%s*" github-repository path))
+  (setq github-buffer-temp (format "*%s:%s:%s*" github-mode-name github-repository path))
   (request
    url
    :parser 'buffer-string
@@ -85,13 +85,12 @@ This function will create *Github:REPO:* buffer"
                       (let (gh-object)
                         (erase-buffer)
                         (insert data)
-                        (pop-to-buffer (current-buffer))
+                        (switch-to-buffer (current-buffer))
                         (beginning-of-buffer)
                         (setq gh-object (json-read))
                         (erase-buffer)
                         (github--render-object gh-object)
-                        (github-mode)
-                        )
+                        (github-mode))
                       ))))
    :error
    (cl-function (lambda (&key error-thrown &allow-other-keys&rest _)
@@ -103,7 +102,7 @@ This function will create *Github:REPO:* buffer"
   "Get raw of PATH in REPO github."
   (let (url)
     (setq url (format "https://raw.githubusercontent.com/%s/master%s" repo path))
-    (setq github-buffer-temp (format "*Github:%s:%s*" repo path))
+    (setq github-buffer-temp (format "*%s:%s:%s*" github-mode-name repo path))
     (request
      url
      :parser 'buffer-string
@@ -113,13 +112,21 @@ This function will create *Github:REPO:* buffer"
                       (with-current-buffer (get-buffer-create github-buffer-temp)
                         (erase-buffer)
                         (insert data)
-                        (pop-to-buffer (current-buffer))))))
+                        (pop-to-buffer (current-buffer))
+                        (beginning-of-buffer)))))
      :error
      (cl-function (lambda (&key error-thrown &allow-other-keys&rest _)
                     (message "Got error: %S" error-thrown)))
      :complete (lambda (&rest _) (message "Finished!")))))
 ;; (github--raw "melpa/melpa" "README.md")
 
+(defun github-apply-auto-mode (buffer-or-name &optional action norecord)
+  "Apply auto-mode for buffer Github."
+  (unless buffer-file-name
+    (if (string-match-p (regexp-quote github-mode-name) (buffer-name))
+        (let ((buffer-file-name (substring (buffer-name) 0 -1))) ;; remove * ending
+          (set-auto-mode t)))))
+(advice-add 'pop-to-buffer :after #'github-apply-auto-mode)
 
 (defun github--render-object (gh-object)
   "Render the GH-OBJECT."
@@ -130,8 +137,8 @@ This function will create *Github:REPO:* buffer"
       (setq item (elt trees i))
       (setq path (cdr (assoc 'path item)))
       (if (string= (cdr (assoc 'type item)) "blob")
-          (insert (format "   --- %s" path))
-        (insert (format "   [+] %s" path))
+          (insert (format "  --- %s" path))
+        (insert (format "  [+] %s" path))
         (left-char (length path))
         (put-text-property (point) (+ (length path) (point)) 'face 'github-directory-face)
         )
@@ -153,8 +160,7 @@ This function will create *Github:REPO:* buffer"
         (define-key github-mode-map (kbd "RET") 'github-go-at-point)
         (define-key github-mode-map (kbd "n") 'next-line)
         (define-key github-mode-map (kbd "p") 'previous-line)))
-  (use-local-map github-mode-map)
-  )
+  (use-local-map github-mode-map))
 
 
 (provide 'github-mode)
