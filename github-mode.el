@@ -13,6 +13,7 @@
 ;;; Code:
 
 (require 'request)
+(require 'json)
 
 ;; * TODO will also accept a full link https://github...
 
@@ -122,7 +123,8 @@ This function will create *Github:REPO:* buffer"
 ;; (github--raw "melpa/melpa" "README.md")
 
 (defun github-apply-auto-mode (buffer-or-name &optional action norecord)
-  "Apply auto-mode for buffer Github."
+  "Apply auto-mode for buffer Github.
+pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (unless buffer-file-name
     (if (string-match-p (regexp-quote github-mode-name) (buffer-name))
         (let ((buffer-file-name (substring (buffer-name) 0 -1))) ;; remove * ending
