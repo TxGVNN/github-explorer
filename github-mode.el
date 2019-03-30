@@ -43,6 +43,7 @@
 
 (defvar github-repository)
 
+;;;###autoload
 (defun github-go (&optional repo)
   "Go REPO github."
   (interactive (list (thing-at-point 'symbol)))
@@ -84,6 +85,7 @@ This function will create *Github:REPO:* buffer"
                   (when data
                     (with-current-buffer (get-buffer-create github-buffer-temp)
                       (let (gh-object)
+                        (read-only-mode -1)
                         (erase-buffer)
                         (insert data)
                         (switch-to-buffer (current-buffer))
@@ -92,8 +94,8 @@ This function will create *Github:REPO:* buffer"
                         (erase-buffer)
                         (insert (format "[*] %s:%s\n" github-repository path))
                         (github--render-object gh-object)
-                        (github-mode))
-                      ))))
+                        (beginning-of-buffer)
+                        (github-mode))))))
    :error
    (cl-function (lambda (&key error-thrown &allow-other-keys&rest _)
                   (message "Got error: %S" error-thrown)))
@@ -150,7 +152,6 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
       (insert "\n")
       (setq i (+ i 1)))))
 
-;;;###autoload
 (define-derived-mode github-mode fundamental-mode github-mode-name
   "Major mode for exploring Github repository on the fly"
   (setq buffer-auto-save-file-name nil
