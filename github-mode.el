@@ -133,24 +133,36 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
           (set-auto-mode t)))))
 (advice-add 'pop-to-buffer :after #'github-apply-auto-mode)
 
+
+(defun github--item-path (item)
+  "Get the path for an item from Github."
+  (cdr (assoc 'path item)))
+
+
+(defun github--item-type (item)
+  "Get the type for an item from Github."
+  (cdr (assoc 'type item)))
+
+
 (defun github--render-object (gh-object)
   "Render the GH-OBJECT."
-  (let (item i trees path)
-    (setq trees (cdr (assoc 'tree gh-object)))
-    (setq i 0)
-    (while (< i (length trees))
-      (setq item (elt trees i))
-      (setq path (cdr (assoc 'path item)))
-      (if (string= (cdr (assoc 'type item)) "blob")
-          (insert (format "  |----- %s" path))
-        (insert (format "  |--[+] %s" path))
-        (left-char (length path))
-        (put-text-property (point) (+ (length path) (point)) 'face 'github-directory-face)
-        )
-      (put-text-property (line-beginning-position) (+ (line-beginning-position) 1) 'invisible item)
-      (end-of-line)
-      (insert "\n")
-      (setq i (+ i 1)))))
+  (let ((trees (cdr (assoc 'tree gh-object))))
+	(cl-loop
+	 for item across trees
+	 for path = (github--item-path item)
+
+	 if (string= (github--item-type item) "blob")
+	 do (insert (format "  |----- %s" path))
+	 else do
+	 (insert (format "  |--[+] %s" path))
+	 (left-char (length path))
+	 (put-text-property (point) (+ (length path) (point)) 'face 'github-directory-face)
+
+	 do
+	 (put-text-property (line-beginning-position) (1+ (line-beginning-position)) 'invisible item)
+	 (end-of-line)
+	 (insert "\n"))))
+
 
 (define-derived-mode github-mode fundamental-mode github-mode-name
   "Major mode for exploring Github repository on the fly"
