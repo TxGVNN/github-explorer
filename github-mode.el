@@ -136,12 +136,12 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
 
 
 (defun github--item-path (item)
-  "Get the path for an item from Github."
+  "Get the path for an ITEM from Github."
   (cdr (assoc 'path item)))
 
 
 (defun github--item-type (item)
-  "Get the type for an item from Github."
+  "Get the type for an ITEM from Github."
   (cdr (assoc 'type item)))
 
 
