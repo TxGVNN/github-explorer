@@ -55,7 +55,7 @@
 (defun github-go-at-point()
   "Go to path in buffer Github tree."
   (interactive)
-  (let (url path (pos 0) matches repo base-path)
+  (let (url path (pos 0) matches repo base-path item)
     (setq item (get-text-property (line-beginning-position) 'invisible))
     (setq url (cdr (assoc 'url item)))
     (setq path (cdr (assoc 'path item)))
@@ -82,28 +82,28 @@ This function will create *Github:REPO:* buffer"
    url
    :parser 'buffer-string
    :success
-   (cl-function (lambda (&key data &allow-other-keys)
-                  (when data
-                    (with-current-buffer (get-buffer-create github-buffer-temp)
-                      (let (gh-object)
-                        (read-only-mode -1)
-                        (erase-buffer)
-                        (insert data)
-                        (switch-to-buffer (current-buffer))
-                        (beginning-of-buffer)
-                        (setq gh-object (json-read))
-                        (erase-buffer)
-                        (insert (format "[*] %s:%s\n" github-repository path))
-                        (github--render-object gh-object)
-                        (beginning-of-buffer)
-                        (github-mode))))))
+   (function* (lambda (&key data &allow-other-keys)
+                (when data
+                  (with-current-buffer (get-buffer-create github-buffer-temp)
+                    (let (github-object)
+                      (read-only-mode -1)
+                      (erase-buffer)
+                      (insert data)
+                      (switch-to-buffer (current-buffer))
+                      (goto-char (point-min))
+                      (setq github-object (json-read))
+                      (erase-buffer)
+                      (insert (format "[*] %s:%s\n" github-repository path))
+                      (github--render-object github-object)
+                      (goto-char (point-min))
+                      (github-mode))))))
    :error
-   (cl-function (lambda (&key error-thrown &allow-other-keys&rest _)
-                  (message "Got error: %S" error-thrown)))
+   (function* (lambda (&rest args &key error-thrown &allow-other-keys)
+                (message "Got error: %S" error-thrown)))
    :complete (lambda (&rest _) (message "Finished!"))))
 
 ;; * QUESTION support revision? only master?
-(defun github--raw (&optional repo path)
+(defun github--raw (repo path)
   "Get raw of PATH in REPO github."
   (let (url)
     (setq url (format "https://raw.githubusercontent.com/%s/master%s" repo path))
@@ -112,20 +112,20 @@ This function will create *Github:REPO:* buffer"
      url
      :parser 'buffer-string
      :success
-     (cl-function (lambda (&key data &allow-other-keys)
-                    (when data
-                      (with-current-buffer (get-buffer-create github-buffer-temp)
-                        (erase-buffer)
-                        (insert data)
-                        (pop-to-buffer (current-buffer))
-                        (beginning-of-buffer)))))
+     (function* (lambda (&key data &allow-other-keys)
+                  (when data
+                    (with-current-buffer (get-buffer-create github-buffer-temp)
+                      (erase-buffer)
+                      (insert data)
+                      (pop-to-buffer (current-buffer))
+                      (goto-char (point-min))))))
      :error
-     (cl-function (lambda (&key error-thrown &allow-other-keys&rest _)
-                    (message "Got error: %S" error-thrown)))
+     (function* (lambda (&rest args &key error-thrown &allow-other-keys)
+                  (message "Got error: %S" error-thrown)))
      :complete (lambda (&rest _) (message "Finished!")))))
 ;; (github--raw "melpa/melpa" "README.md")
 
-(defun github-apply-auto-mode (buffer-or-name &optional action norecord)
+(defun github-apply-auto-mode (&rest _)
   "Apply auto-mode for buffer Github.
 pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (unless buffer-file-name
@@ -145,9 +145,9 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (cdr (assoc 'type item)))
 
 
-(defun github--render-object (gh-object)
-  "Render the GH-OBJECT."
-  (let ((trees (cdr (assoc 'tree gh-object))))
+(defun github--render-object (github-object)
+  "Render the GITHUB-OBJECT."
+  (let ((trees (cdr (assoc 'tree github-object))))
 	(cl-loop
 	 for item across trees
 	 for path = (github--item-path item)
