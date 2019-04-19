@@ -102,7 +102,7 @@ This function will create *GitHub:REPO:* buffer"
    url
    :parser 'buffer-string
    :success
-   (function* (lambda (&key data &allow-other-keys)
+   (cl-function (lambda (&key data &allow-other-keys)
                 (when data
                   (with-current-buffer (get-buffer-create github-buffer-temp)
                     (let (github-object)
@@ -118,9 +118,8 @@ This function will create *GitHub:REPO:* buffer"
                       (goto-char (point-min))
                       (github-mode))))))
    :error
-   (function* (lambda (&rest args &key error-thrown &allow-other-keys)
+   (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
                 (message "Got error: %S" error-thrown)))))
-
 
 (defun github--raw (repo path)
   "Get raw of PATH in REPO github."
@@ -131,7 +130,7 @@ This function will create *GitHub:REPO:* buffer"
      url
      :parser 'buffer-string
      :success
-     (function* (lambda (&key data &allow-other-keys)
+     (cl-function (lambda (&key data &allow-other-keys)
                   (when data
                     (with-current-buffer (get-buffer-create github-buffer-temp)
                       (erase-buffer)
@@ -139,9 +138,8 @@ This function will create *GitHub:REPO:* buffer"
                       (pop-to-buffer (current-buffer))
                       (goto-char (point-min))))))
      :error
-     (function* (lambda (&rest args &key error-thrown &allow-other-keys)
+     (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
                   (message "Got error: %S" error-thrown))))))
-
 
 (defun github-apply-auto-mode (&rest _)
   "Apply auto-mode for buffer GitHub.
@@ -152,16 +150,13 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
           (set-auto-mode t)))))
 (advice-add 'pop-to-buffer :after #'github-apply-auto-mode)
 
-
 (defun github--item-path (item)
   "Get the path for an ITEM from GitHub."
   (cdr (assoc 'path item)))
 
-
 (defun github--item-type (item)
   "Get the type for an ITEM from GitHub."
   (cdr (assoc 'type item)))
-
 
 (defun github--render-object (github-object)
   "Render the GITHUB-OBJECT."
@@ -187,7 +182,6 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (setq buffer-auto-save-file-name nil
         buffer-read-only t)
   (use-local-map github-mode-map))
-
 
 (provide 'github-mode)
 ;;; github-mode.el ends here
