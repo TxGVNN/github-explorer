@@ -9,12 +9,13 @@ M-x github-go "melpa/melpa"
   (define-key github-mode-map (kbd "RET") 'github-go-at-point)
   (define-key github-mode-map (kbd "n") 'next-line)
   (define-key github-mode-map (kbd "p") 'previous-line)
+  (define-key keymap (kbd "q") 'kill-current-buffer)
 
 #+END_SRC
 
 
 * The idea
-Explore public Github repositories like [[https://github.com/ahungry/md4rd][md4rd]] for Reddit
+Explore public GitHub repositories like [[https://github.com/ahungry/md4rd][md4rd]] for Reddit
 
 ** Explore a repository
 #+BEGIN_SRC txt
@@ -41,7 +42,7 @@ Explore public Github repositories like [[https://github.com/ahungry/md4rd][md4r
  |----- travis-changed-files
  |--[+] working
 
--UU-:**- *Github:melpa/melpa:.* --------------------------
+-UU-:**- *GitHub:melpa/melpa:.* --------------------------
   #+END_SRC
 ** Enter a folder (tree)
 #+BEGIN_SRC txt
@@ -59,5 +60,9 @@ Example: ~README.md~
 #+BEGIN_SRC txt
 ...
 
--UU-:**- *Github:melpa/melpa:README.md* --(Markdown)------
+-UU-:**- *GitHub:melpa/melpa:README.md* --(Markdown)------
 #+END_SRC
+
+* Roadmap
+** TODO will also accept a full link https://github...
+** TODO Support branches

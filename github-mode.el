@@ -1,4 +1,4 @@
-;;; github-mode.el --- Explore a Github repository on the fly -*- lexical-binding: t -*-
+;;; github-mode.el --- Explore a GitHub repository on the fly -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2019 Giap Tran <txgvnn@gmail.com>
 
@@ -6,7 +6,7 @@
 ;; URL: https://github.com/TxGVNN/github-mode
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (request "0.1.0"))
-;; Keywords: Github
+;; Keywords: comm
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -32,10 +32,8 @@
 (require 'request)
 (require 'json)
 
-;; * TODO will also accept a full link https://github...
-
 (defgroup github nil
-  "Major mode of Github configuration file."
+  "Major mode of GitHub configuration file."
   :group 'languages
   :prefix "github-")
 
@@ -44,13 +42,20 @@
   :type 'hook
   :group 'github)
 
-(defcustom github-mode-name "Github"
+(defcustom github-mode-name "GitHub"
   "*Modeline of `github-mode'."
   :type 'string
   :group 'github)
 
-(defvar github-mode-map nil
-  "Keymap for Github major mode.")
+(defvar github-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap (kbd "o") 'github-go-at-point)
+    (define-key keymap (kbd "RET") 'github-go-at-point)
+    (define-key keymap (kbd "n") 'next-line)
+    (define-key keymap (kbd "p") 'previous-line)
+    (define-key keymap (kbd "q") 'kill-current-buffer)
+    keymap)
+  "Keymap for GitHub major mode.")
 
 (defface github-directory-face
   '((t (:inherit font-lock-function-name-face)))
@@ -66,10 +71,9 @@
   (interactive (list (thing-at-point 'symbol)))
   (setq github-repository (read-string "Repository: " repo))
   (github--tree (format "https://api.github.com/repos/%s/git/trees/%s" github-repository "master") "/"))
-;; (github-repo "melpa/melpa")
 
 (defun github-go-at-point()
-  "Go to path in buffer Github tree."
+  "Go to path in buffer GitHub tree."
   (interactive)
   (let (url path (pos 0) matches repo base-path item)
     (setq item (get-text-property (line-beginning-position) 'invisible))
@@ -92,7 +96,7 @@
 
 (defun github--tree (url path)
   "Get trees by URL of PATH github.
-This function will create *Github:REPO:* buffer"
+This function will create *GitHub:REPO:* buffer"
   (setq github-buffer-temp (format "*%s:%s:%s*" github-mode-name github-repository path))
   (request
    url
@@ -115,10 +119,9 @@ This function will create *Github:REPO:* buffer"
                       (github-mode))))))
    :error
    (function* (lambda (&rest args &key error-thrown &allow-other-keys)
-                (message "Got error: %S" error-thrown)))
-   :complete (lambda (&rest _) (message "Finished!"))))
+                (message "Got error: %S" error-thrown)))))
 
-;; * QUESTION support revision? only master?
+
 (defun github--raw (repo path)
   "Get raw of PATH in REPO github."
   (let (url)
@@ -137,12 +140,11 @@ This function will create *Github:REPO:* buffer"
                       (goto-char (point-min))))))
      :error
      (function* (lambda (&rest args &key error-thrown &allow-other-keys)
-                  (message "Got error: %S" error-thrown)))
-     :complete (lambda (&rest _) (message "Finished!")))))
-;; (github--raw "melpa/melpa" "README.md")
+                  (message "Got error: %S" error-thrown))))))
+
 
 (defun github-apply-auto-mode (&rest _)
-  "Apply auto-mode for buffer Github.
+  "Apply auto-mode for buffer GitHub.
 pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (unless buffer-file-name
     (if (string-match-p (regexp-quote github-mode-name) (buffer-name))
@@ -152,12 +154,12 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
 
 
 (defun github--item-path (item)
-  "Get the path for an ITEM from Github."
+  "Get the path for an ITEM from GitHub."
   (cdr (assoc 'path item)))
 
 
 (defun github--item-type (item)
-  "Get the type for an ITEM from Github."
+  "Get the type for an ITEM from GitHub."
   (cdr (assoc 'type item)))
 
 
@@ -180,19 +182,10 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
 	 (end-of-line)
 	 (insert "\n"))))
 
-
 (define-derived-mode github-mode fundamental-mode github-mode-name
-  "Major mode for exploring Github repository on the fly"
+  "Major mode for exploring GitHub repository on the fly"
   (setq buffer-auto-save-file-name nil
         buffer-read-only t)
-  ;; Mode map
-  (if (not github-mode-map)
-      (progn
-        (setq github-mode-map (make-sparse-keymap))
-        (define-key github-mode-map (kbd "o") 'github-go-at-point)
-        (define-key github-mode-map (kbd "RET") 'github-go-at-point)
-        (define-key github-mode-map (kbd "n") 'next-line)
-        (define-key github-mode-map (kbd "p") 'previous-line)))
   (use-local-map github-mode-map))
 
 
