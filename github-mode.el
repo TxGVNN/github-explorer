@@ -145,7 +145,7 @@ This function will create *GitHub:REPO:* buffer"
   "Apply auto-mode for buffer GitHub.
 pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (unless buffer-file-name
-    (if (string-match-p (regexp-quote github-mode-name) (buffer-name))
+    (if (string-match-p (regexp-quote (format "*:%s:" github-mode-name)) (buffer-name))
         (let ((buffer-file-name (substring (buffer-name) 0 -1))) ;; remove * ending
           (set-auto-mode t)))))
 (advice-add 'pop-to-buffer :after #'github-apply-auto-mode)
