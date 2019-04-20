@@ -103,23 +103,23 @@ This function will create *GitHub:REPO:* buffer"
    :parser 'buffer-string
    :success
    (cl-function (lambda (&key data &allow-other-keys)
-                (when data
-                  (with-current-buffer (get-buffer-create github-buffer-temp)
-                    (let (github-object)
-                      (read-only-mode -1)
-                      (erase-buffer)
-                      (insert data)
-                      (switch-to-buffer (current-buffer))
-                      (goto-char (point-min))
-                      (setq github-object (json-read))
-                      (erase-buffer)
-                      (insert (format "[*] %s:%s\n" github-repository path))
-                      (github--render-object github-object)
-                      (goto-char (point-min))
-                      (github-mode))))))
+                  (when data
+                    (with-current-buffer (get-buffer-create github-buffer-temp)
+                      (let (github-object)
+                        (read-only-mode -1)
+                        (erase-buffer)
+                        (insert data)
+                        (switch-to-buffer (current-buffer))
+                        (goto-char (point-min))
+                        (setq github-object (json-read))
+                        (erase-buffer)
+                        (insert (format "[*] %s:%s\n" github-repository path))
+                        (github--render-object github-object)
+                        (goto-char (point-min))
+                        (github-mode))))))
    :error
    (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
-                (message "Got error: %S" error-thrown)))))
+                  (message "Got error: %S" error-thrown)))))
 
 (defun github--raw (repo path)
   "Get raw of PATH in REPO github."
@@ -131,15 +131,15 @@ This function will create *GitHub:REPO:* buffer"
      :parser 'buffer-string
      :success
      (cl-function (lambda (&key data &allow-other-keys)
-                  (when data
-                    (with-current-buffer (get-buffer-create github-buffer-temp)
-                      (erase-buffer)
-                      (insert data)
-                      (pop-to-buffer (current-buffer))
-                      (goto-char (point-min))))))
+                    (when data
+                      (with-current-buffer (get-buffer-create github-buffer-temp)
+                        (erase-buffer)
+                        (insert data)
+                        (pop-to-buffer (current-buffer))
+                        (goto-char (point-min))))))
      :error
      (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
-                  (message "Got error: %S" error-thrown))))))
+                    (message "Got error: %S" error-thrown))))))
 
 (defun github-apply-auto-mode (&rest _)
   "Apply auto-mode for buffer GitHub.
