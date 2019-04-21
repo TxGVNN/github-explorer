@@ -1,7 +1,7 @@
 * Usage
 
 #+BEGIN_SRC elisp
-M-x github-go "melpa/melpa"
+M-x github-explorer "melpa/melpa"
 
 
   ;; Mode map
@@ -12,7 +12,6 @@ M-x github-go "melpa/melpa"
   (define-key keymap (kbd "q") 'kill-current-buffer)
 
 #+END_SRC
-
 
 * The idea
 Explore public GitHub repositories like [[https://github.com/ahungry/md4rd][md4rd]] for Reddit
