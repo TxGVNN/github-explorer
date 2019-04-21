@@ -53,7 +53,6 @@
     (define-key keymap (kbd "RET") 'github-go-at-point)
     (define-key keymap (kbd "n") 'next-line)
     (define-key keymap (kbd "p") 'previous-line)
-    (define-key keymap (kbd "q") 'kill-current-buffer)
     keymap)
   "Keymap for GitHub major mode.")
 
@@ -145,7 +144,7 @@ This function will create *GitHub:REPO:* buffer"
   "Apply auto-mode for buffer GitHub.
 pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (unless buffer-file-name
-    (if (string-match-p (regexp-quote (format "*:%s:" github-mode-name)) (buffer-name))
+    (if (string-match-p (regexp-quote (format "*%s:" github-mode-name)) (buffer-name))
         (let ((buffer-file-name (substring (buffer-name) 0 -1))) ;; remove * ending
           (set-auto-mode t)))))
 (advice-add 'pop-to-buffer :after #'github-apply-auto-mode)
@@ -177,11 +176,10 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
 	 (end-of-line)
 	 (insert "\n"))))
 
-(define-derived-mode github-mode fundamental-mode github-mode-name
+(define-derived-mode github-mode special-mode github-mode-name
   "Major mode for exploring GitHub repository on the fly"
   (setq buffer-auto-save-file-name nil
-        buffer-read-only t)
-  (use-local-map github-mode-map))
+        buffer-read-only t))
 
 (provide 'github-mode)
 ;;; github-mode.el ends here
