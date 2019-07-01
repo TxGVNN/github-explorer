@@ -5,7 +5,7 @@
 ;; Author: Giap Tran <txgvnn@gmail.com>
 ;; URL: https://github.com/TxGVNN/github-explorer
 ;; Version: 0.1
-;; Package-Requires: ((emacs "24.4") (request "0.1.0"))
+;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: comm
 
 ;; This file is NOT part of GNU Emacs.
@@ -29,7 +29,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'request)
 (require 'json)
 
 (defgroup github nil
@@ -97,48 +96,49 @@
   "Get trees by URL of PATH github.
 This function will create *GitHub:REPO:* buffer"
   (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name github-explorer-repository path))
-  (request
-   url
-   :parser 'buffer-string
-   :success
-   (cl-function (lambda (&key data &allow-other-keys)
-                  (when data
-                    (with-current-buffer (get-buffer-create github-explorer-buffer-temp)
+  (url-retrieve url
+                (lambda (arg)
+                  (cond
+                   ((equal :error (car arg))
+                    (message arg))
+                   (t
+                    (with-current-buffer (current-buffer)
                       (let (github-explorer-object)
-                        (read-only-mode -1)
-                        (erase-buffer)
-                        (insert data)
-                        (switch-to-buffer (current-buffer))
+                        (goto-char (point-min))
+                        (re-search-forward "^$")
+                        (delete-region (point) (point-min))
                         (goto-char (point-min))
                         (setq github-explorer-object (json-read))
-                        (erase-buffer)
-                        (insert (format "[*] %s:%s\n" github-explorer-repository path))
-                        (github-explorer--render-object github-explorer-object)
-                        (goto-char (point-min))
-                        (github-explorer-mode))))))
-   :error
-   (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
-                  (message "Got error: %S" error-thrown)))))
+                        (with-current-buffer (get-buffer-create github-explorer-buffer-temp)
+                          (read-only-mode -1)
+                          (erase-buffer)
+                          (github-explorer--render-object github-explorer-object)
+                          (goto-char (point-min))
+                          (github-explorer-mode)
+                          (switch-to-buffer (current-buffer))))))))))
 
 (defun github-explorer--raw (repo path)
   "Get raw of PATH in REPO github."
   (let (url)
     (setq url (format "https://raw.githubusercontent.com/%s/master%s" repo path))
     (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name repo path))
-    (request
-     url
-     :parser 'buffer-string
-     :success
-     (cl-function (lambda (&key data &allow-other-keys)
-                    (when data
-                      (with-current-buffer (get-buffer-create github-explorer-buffer-temp)
-                        (erase-buffer)
-                        (insert data)
-                        (pop-to-buffer (current-buffer))
-                        (goto-char (point-min))))))
-     :error
-     (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
-                    (message "Got error: %S" error-thrown))))))
+    (url-retrieve url
+                  (lambda (arg)
+                    (cond
+                     ((equal :error (car arg))
+                      (message arg))
+                     (t
+                      (with-current-buffer (current-buffer)
+                        (let (data)
+                          (goto-char (point-min))
+                          (re-search-forward "^$")
+                          (delete-region (+ 1 (point)) (point-min))
+                          (goto-char (point-min))
+                          (setq data (buffer-string))
+                          (with-current-buffer (get-buffer-create github-explorer-buffer-temp)
+                            (insert data)
+                            (pop-to-buffer (current-buffer))
+                            (goto-char (point-min)))))))))))
 
 (defun github-explorer-apply-auto-mode (&rest _)
   "Apply auto-mode for buffer GitHub.
