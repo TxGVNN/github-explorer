@@ -1,3 +1,7 @@
+* github-explorer
+[[https://melpa.org/#/github-explorer][file:https://melpa.org/packages/github-explorer-badge.svg]]
+[[http://www.gnu.org/licenses/gpl-3.0.html][http://img.shields.io/:license-gpl3-blue.svg]]
+
 * Usage
 
 #+BEGIN_SRC elisp
@@ -63,5 +67,5 @@ Example: ~README.md~
 #+END_SRC
 
 * Roadmap
-** TODO will also accept a full link https://github...
-** TODO Support branches
+- [ ] Accept a full link https://github...
+- [ ] Support branches
