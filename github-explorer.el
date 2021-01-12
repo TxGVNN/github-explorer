@@ -63,12 +63,36 @@
 
 (defvar github-explorer-repository)
 
+(defun github-explorer-util-package-try-get-package-url ()
+  "Try and get single a package url under point.
+
+From URL `https://github.com/akshaybadola/emacs-util'
+`util/package-try-get-package-url'."
+  (when (and (eq major-mode 'package-menu-mode))
+    (let ((pkg-desc (tabulated-list-get-id (point))))
+      (when (and pkg-desc (package-desc-extras pkg-desc))
+        (message (cdr (assq :url (package-desc-extras  pkg-desc))))
+        (cdr (assq :url (package-desc-extras  pkg-desc)))))))
+
+(defun github-explorer-repo-from-url (url)
+  "Get repo user/name from url."
+  (string-join (last (split-string url "/") 2) "/"))
+
 ;;;###autoload
 (defun github-explorer (&optional repo)
   "Go REPO github."
-  (interactive (list (thing-at-point 'symbol)))
+  (interactive (list (or (and (thing-at-point 'url t)
+                              (github-explorer-repo-from-url (thing-at-point 'url t)))
+                         (and (eq major-mode 'org-mode)
+                              (eq (org-element-type (org-element-context)) 'link)
+                              (github-explorer-repo-from-url
+                               (org-element-property :raw-link (org-element-context))))
+                         (and (eq major-mode 'package-menu-mode)
+                              (github-explorer-repo-from-url (util/package-try-get-package-url)))
+                         (thing-at-point 'symbol))))
   (setq github-explorer-repository (read-string "Repository: " repo))
-  (github-explorer--tree (format "https://api.github.com/repos/%s/git/trees/%s" github-explorer-repository "master") "/"))
+  (github-explorer--tree (format "https://api.github.com/repos/%s/git/trees/%s"
+                                 github-explorer-repository "master") "/"))
 
 (defun github-explorer-at-point()
   "Go to path in buffer GitHub tree."
