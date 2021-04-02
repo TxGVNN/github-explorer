@@ -4,68 +4,10 @@
 
 * Usage
 
-#+BEGIN_SRC elisp
-M-x github-explorer "melpa/melpa"
+** DONE Find files in a repository
+~M-x github-explorer melpa/melpa~
 
+If you select path ="", ~github-explorer~ will display root directory.
 
-  ;; Mode map
-  (define-key github-mode-map (kbd "o") 'github-go-at-point)
-  (define-key github-mode-map (kbd "RET") 'github-go-at-point)
-  (define-key github-mode-map (kbd "n") 'next-line)
-  (define-key github-mode-map (kbd "p") 'previous-line)
-  (define-key keymap (kbd "q") 'kill-current-buffer)
-
-#+END_SRC
-
-* The idea
-Explore public GitHub repositories like [[https://github.com/ahungry/md4rd][md4rd]] for Reddit
-
-** Explore a repository
-#+BEGIN_SRC txt
-[-] /melpa/melpa
- |--[+] .github
- |----- .gitignore
- |----- .travis.yml
- |----- CONTRIBUTING.org
- |----- Cask
- |----- LICENSE.md
- |----- Makefile
- |----- README.md
- |--[+] docker
- |--[+] html-stable
- |--[+] html
- |--[+] logo
- |--[+] package-build
- |--[+] packages-stable
- |--[+] packages
- |--[+] recipes
- |----- run-travis-ci.sh
- |--[+] scripts
- |--[+] service
- |----- travis-changed-files
- |--[+] working
-
--UU-:**- *GitHub:melpa/melpa:.* --------------------------
-  #+END_SRC
-** Enter a folder (tree)
-#+BEGIN_SRC txt
-[-] /melpa/melpa
- |--[-] .github
- |   |----- PULL_REQUEST_TEMPLATE.md
- |----- .gitignore
- |----- .travis.yml
-   #+END_SRC
-** Explore a file (blob)
-Using raw.github.com and chang to major mode of file type.
-
-
-Example: ~README.md~
-#+BEGIN_SRC txt
-...
-
--UU-:**- *GitHub:melpa/melpa:README.md* --(Markdown)------
-#+END_SRC
-
-* Roadmap
-- [ ] Accept a full link https://github...
-- [ ] Support branches
+** TODO Search pattern in a repository
+** TODO Search repo then run find-file

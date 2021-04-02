@@ -90,9 +90,24 @@ From URL `https://github.com/akshaybadola/emacs-util'
                          (and (eq major-mode 'package-menu-mode)
                               (github-explorer-repo-from-url (util/package-try-get-package-url)))
                          (thing-at-point 'symbol))))
-  (setq github-explorer-repository (read-string "Repository: " repo))
-  (github-explorer--tree (format "https://api.github.com/repos/%s/git/trees/%s"
-                                 github-explorer-repository "master") "/"))
+  (setq repo (read-string "Repository: " repo))
+  (url-retrieve (format "https://api.github.com/repos/%s/git/trees/HEAD:?recursive=1" repo)
+                (lambda (arg)
+                  (cond
+                   ((equal :error (car arg))
+                    (message arg))
+                   (t
+                    (with-current-buffer (current-buffer)
+                      (goto-char (point-min))
+                      (re-search-forward "^$")
+                      (delete-region (+ 1 (point)) (point-min))
+                      (goto-char (point-min))
+                      (let* ((paths (mapcar (lambda (x) (cdr (assoc 'path x))) (cdr (assoc 'tree (json-read)))))
+                             (path (completing-read "Find-file: " paths)))
+                        (if (eq (length path) 0)
+                            (github-explorer--tree (format "https://api.github.com/repos/%s/git/trees/%s"
+                                                           repo "HEAD") "/")
+                          (github-explorer--raw repo (format "/%s" path))))))))))
 
 (defun github-explorer-at-point()
   "Go to path in buffer GitHub tree."
@@ -144,7 +159,7 @@ This function will create *GitHub:REPO:* buffer"
 (defun github-explorer--raw (repo path)
   "Get raw of PATH in REPO github."
   (let (url)
-    (setq url (format "https://raw.githubusercontent.com/%s/master%s" repo path))
+    (setq url (format "https://raw.githubusercontent.com/%s/HEAD%s" repo path))
     (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name repo path))
     (url-retrieve url
                   (lambda (arg)
