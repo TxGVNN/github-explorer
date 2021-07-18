@@ -90,8 +90,8 @@ From URL `https://github.com/akshaybadola/emacs-util'
                          (and (eq major-mode 'package-menu-mode)
                               (github-explorer-repo-from-url (util/package-try-get-package-url)))
                          (thing-at-point 'symbol))))
-  (setq repo (read-string "Repository: " repo))
-  (url-retrieve (format "https://api.github.com/repos/%s/git/trees/HEAD:?recursive=1" repo)
+  (setq github-explorer-repository (read-string "Repository: " repo))
+  (url-retrieve (format "https://api.github.com/repos/%s/git/trees/HEAD:?recursive=1" github-explorer-repository)
                 (lambda (arg)
                   (cond
                    ((equal :error (car arg))
@@ -106,8 +106,8 @@ From URL `https://github.com/akshaybadola/emacs-util'
                              (path (completing-read "Find-file: " paths)))
                         (if (eq (length path) 0)
                             (github-explorer--tree (format "https://api.github.com/repos/%s/git/trees/%s"
-                                                           repo "HEAD") "/")
-                          (github-explorer--raw repo (format "/%s" path))))))))))
+                                                           github-explorer-repository "HEAD") "/")
+                          (github-explorer--raw github-explorer-repository (format "/%s" path))))))))))
 
 (defun github-explorer-at-point()
   "Go to path in buffer GitHub tree."
