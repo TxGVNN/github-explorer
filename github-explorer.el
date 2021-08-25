@@ -59,9 +59,8 @@
   '((t (:inherit font-lock-function-name-face)))
   "Face for a directory.")
 
-(defvar github-explorer-buffer-temp)
-
-(defvar github-explorer-repository)
+(defvar github-explorer-repository nil)
+(defvar github-explorer-buffer-temp nil)
 
 (defun github-explorer-util-package-try-get-package-url ()
   "Try and get single a package url under point.
@@ -90,24 +89,24 @@ From URL `https://github.com/akshaybadola/emacs-util'
                          (and (eq major-mode 'package-menu-mode)
                               (github-explorer-repo-from-url (util/package-try-get-package-url)))
                          (thing-at-point 'symbol))))
-  (setq github-explorer-repository (read-string "Repository: " repo))
-  (url-retrieve (format "https://api.github.com/repos/%s/git/trees/HEAD:?recursive=1" github-explorer-repository)
-                (lambda (arg)
-                  (cond
-                   ((equal :error (car arg))
-                    (message arg))
-                   (t
-                    (with-current-buffer (current-buffer)
-                      (goto-char (point-min))
-                      (re-search-forward "^$")
-                      (delete-region (+ 1 (point)) (point-min))
-                      (goto-char (point-min))
-                      (let* ((paths (mapcar (lambda (x) (cdr (assoc 'path x))) (cdr (assoc 'tree (json-read)))))
-                             (path (completing-read "Find-file: " paths)))
-                        (if (eq (length path) 0)
-                            (github-explorer--tree (format "https://api.github.com/repos/%s/git/trees/%s"
-                                                           github-explorer-repository "HEAD") "/")
-                          (github-explorer--raw github-explorer-repository (format "/%s" path))))))))))
+  (let ((repo (read-string "Repository: " repo)))
+    (url-retrieve (format "https://api.github.com/repos/%s/git/trees/HEAD:?recursive=1" repo)
+                  (lambda (arg)
+                    (cond
+                     ((equal :error (car arg))
+                      (message arg))
+                     (t
+                      (with-current-buffer (current-buffer)
+                        (goto-char (point-min))
+                        (re-search-forward "^$")
+                        (delete-region (+ 1 (point)) (point-min))
+                        (goto-char (point-min))
+                        (let* ((paths (mapcar (lambda (x) (cdr (assoc 'path x))) (cdr (assoc 'tree (json-read)))))
+                               (path (completing-read "Find-file: " paths)))
+                          (if (eq (length path) 0)
+                              (github-explorer--tree repo (format "https://api.github.com/repos/%s/git/trees/%s"
+                                                                  repo "HEAD") "/")
+                            (github-explorer--raw repo (format "/%s" path)))))))))))
 
 (defun github-explorer-at-point()
   "Go to path in buffer GitHub tree."
@@ -128,13 +127,13 @@ From URL `https://github.com/akshaybadola/emacs-util'
         (setq path (concat path "/")))
     (message "%s" path)
     (if (string= (cdr (assoc 'type item)) "tree")
-        (github-explorer--tree url path)
+        (github-explorer--tree repo url path)
       (github-explorer--raw repo path))))
 
-(defun github-explorer--tree (url path)
+(defun github-explorer--tree (repo url path)
   "Get trees by URL of PATH github.
 This function will create *GitHub:REPO:* buffer"
-  (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name github-explorer-repository path))
+  (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name repo path))
   (url-retrieve url
                 (lambda (arg)
                   (cond
@@ -154,6 +153,7 @@ This function will create *GitHub:REPO:* buffer"
                           (github-explorer--render-object github-explorer-object)
                           (goto-char (point-min))
                           (github-explorer-mode)
+                          (setq-local github-explorer-repository repo)
                           (switch-to-buffer (current-buffer))))))))))
 
 (defun github-explorer--raw (repo path)
@@ -177,7 +177,8 @@ This function will create *GitHub:REPO:* buffer"
                           (with-current-buffer (get-buffer-create github-explorer-buffer-temp)
                             (insert data)
                             (pop-to-buffer (current-buffer))
-                            (goto-char (point-min)))))))))))
+                            (goto-char (point-min))
+                            (setq-local github-explorer-repository repo))))))))))
 
 (defun github-explorer-apply-auto-mode (&rest _)
   "Apply auto-mode for buffer GitHub.
