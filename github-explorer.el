@@ -103,8 +103,12 @@ From URL `https://github.com/akshaybadola/emacs-util'
                         (re-search-forward "^$")
                         (delete-region (+ 1 (point)) (point-min))
                         (goto-char (point-min))
-                        (let* ((paths (mapcar (lambda (x) (cdr (assoc 'path x))) (cdr (assoc 'tree (json-read)))))
-                               (path (completing-read "Find-file: " paths)))
+                        (let* ((paths (remove nil
+                                              (mapcar (lambda (x)
+                                                        (if (equal (cdr (assoc 'type x)) "blob")
+                                                            (cdr (assoc 'path x))))
+                                                      (cdr (assoc 'tree (json-read))))))
+                                      (path (completing-read "Find file: " paths)))
                           (if (eq (length path) 0)
                               (github-explorer--tree repo (format "https://api.github.com/repos/%s/git/trees/%s"
                                                                   repo "HEAD") "/")
