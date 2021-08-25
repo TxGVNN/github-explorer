@@ -5,7 +5,7 @@
 ;; Author: Giap Tran <txgvnn@gmail.com>
 ;; URL: https://github.com/TxGVNN/github-explorer
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "25"))
 ;; Keywords: comm
 
 ;; This file is NOT part of GNU Emacs.
@@ -30,6 +30,8 @@
 
 (require 'cl-lib)
 (require 'json)
+(require 'graphql)
+(require 'hi-lock)
 
 (defgroup github nil
   "Major mode of GitHub configuration file."
@@ -220,6 +222,79 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   "Major mode for exploring GitHub repository on the fly"
   (setq buffer-auto-save-file-name nil
         buffer-read-only t))
+
+(defun github-build-graphql (variable-query)
+  "Build Graphql query.
+VARIABLE-QUERY"
+  (list
+   (cons "query"
+         (graphql-query
+          (:arguments
+           (($query . String!))
+           (search
+            :arguments
+            ((query . ($ query)))
+            (results limitHit
+                     (results
+                      ... on (FileMatch
+                              (file name path)
+                              (lineMatches preview lineNumber offsetAndLengths))))))))
+   (cons "variables" (list (cons "query" variable-query)))))
+
+(defun github-explorer-search (&optional prefix)
+  "Using sourcegraph to search pattern.
+If PREFIX is set, prompt repo"
+  (interactive "P")
+  (let ((repo
+         (if (or (not github-explorer-repository) (and github-explorer-repository prefix))
+             (read-string "Repository: ")
+           github-explorer-repository))
+        (query (read-string "Query: ")))
+    (github-explorer-search-f repo query)))
+
+(defun github-explorer-search-f (&optional repo query)
+  "Search QUERY in REPO by using Sourcegraph API."
+  (let ((url-request-method (encode-coding-string "POST" 'us-ascii))
+        (url-request-extra-headers '())
+        (url-request-data (json-encode (github-build-graphql (format "repo:^github.com/%s$ %s" repo query))))
+        (url-mime-charset-string (url-mime-charset-string)))
+    (url-retrieve "https://sourcegraph.com/.api/graphql"
+                  #'github-explorer-search-response
+                  (append (list repo query)))))
+
+(defun github-explorer-search--write (data)
+  "Parse graphql DATA into current buffer."
+  (dolist (linematch (cdr (car (cdr (cdr (car (cdr (car (cdr (car data))))))))))
+    (insert (cdr (car (cdr (cdr (car linematch))))))
+    (insert "\n")
+    (dolist (line  (cdr (car (cdr linematch))))
+      (insert (format "%s:" (cdr (assoc 'lineNumber line))))
+      (insert (make-string (car (car (cdr(assoc 'offsetAndLengths line)))) #x20))
+      (insert (cdr(assoc 'preview line)))
+      (insert "\n"))))
+
+(defun github-explorer-search-response (status repo query)
+  "Render the response(STATUS) of searching QUERY in REPO."
+  (if (= (point-min) (point-max))
+      (signal (car (plist-get status :error)) (cdr (plist-get status :error)))
+    (when (buffer-live-p (current-buffer))
+      (with-current-buffer (current-buffer)
+        (goto-char (point-min))
+        (re-search-forward "^$")
+        (delete-region (point) (point-min))
+        (goto-char (point-min))
+        (let* ((json-object-type 'alist)
+               (json-array-type 'list)
+               (data (json-read))
+               (bufname (format "*%s:%s?%s*" github-explorer-name repo query)))
+          (with-current-buffer (get-buffer-create bufname)
+            (github-explorer-search--write data)
+            (hi-lock-set-pattern query font-lock-keyword-face nil nil t nil)
+            (read-only-mode 1)
+            (setq-local github-explorer-repository repo)
+            (switch-to-buffer (current-buffer))))))))
+
+;; (github-explorer-search-f "github.com/txgvnn/github-explorer" "defun")
 
 (provide 'github-explorer)
 ;;; github-explorer.el ends here

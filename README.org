@@ -9,5 +9,5 @@
 
 If you select path ="", ~github-explorer~ will display root directory.
 
-** TODO Search pattern in a repository
-** TODO Search repo then run find-file
+** DONE Search pattern in a repository
+~M-x github-explorer-search~
