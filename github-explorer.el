@@ -5,7 +5,7 @@
 ;; Author: Giap Tran <txgvnn@gmail.com>
 ;; URL: https://github.com/TxGVNN/github-explorer
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "25") (graphql))
 ;; Keywords: comm
 
 ;; This file is NOT part of GNU Emacs.
@@ -76,7 +76,7 @@ From URL `https://github.com/akshaybadola/emacs-util'
         (cdr (assq :url (package-desc-extras  pkg-desc)))))))
 
 (defun github-explorer-repo-from-url (url)
-  "Get repo user/name from url."
+  "Get repo user/name from URL."
   (string-join (last (split-string url "/") 2) "/"))
 
 ;;;###autoload
@@ -89,7 +89,7 @@ From URL `https://github.com/akshaybadola/emacs-util'
                               (github-explorer-repo-from-url
                                (org-element-property :raw-link (org-element-context))))
                          (and (eq major-mode 'package-menu-mode)
-                              (github-explorer-repo-from-url (util/package-try-get-package-url)))
+                              (github-explorer-repo-from-url (github-explorer-util-package-try-get-package-url)))
                          (thing-at-point 'symbol))))
   (let ((repo (read-string "Repository: " repo)))
     (url-retrieve (format "https://api.github.com/repos/%s/git/trees/HEAD:?recursive=1" repo)
@@ -223,7 +223,7 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
 	 (insert "\n"))))
 
 (define-derived-mode github-explorer-mode special-mode github-explorer-name
-  "Major mode for exploring GitHub repository on the fly"
+  "Major mode for exploring GitHub repository on the fly."
   (setq buffer-auto-save-file-name nil
         buffer-read-only t))
 
