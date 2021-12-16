@@ -48,6 +48,11 @@
   :type 'string
   :group 'github)
 
+(defcustom github-explorer-sourcegraph-url "https://github1s.com/api/sourcegraph"
+  "Sourcegraph API path."
+  :type 'string
+  :group 'github)
+
 (defvar github-explorer-mode-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap (kbd "o") 'github-explorer-at-point)
@@ -262,7 +267,7 @@ If PREFIX is set, prompt repo"
         (url-request-extra-headers '())
         (url-request-data (json-encode (github-build-graphql (format "repo:^github.com/%s$ %s" repo query))))
         (url-mime-charset-string (url-mime-charset-string)))
-    (url-retrieve "https://sourcegraph.com/.api/graphql"
+    (url-retrieve github-explorer-sourcegraph-url
                   #'github-explorer-search-response
                   (append (list repo query)))))
 
