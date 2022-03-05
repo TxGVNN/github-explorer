@@ -232,7 +232,8 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
 	 do
 	 (put-text-property (line-beginning-position) (1+ (line-beginning-position)) 'invisible item)
 	 (end-of-line)
-	 (insert "\n"))))
+     (insert "\n")))
+  (insert "\nMenu:\n(f) find file.\n(s) search string."))
 
 (define-derived-mode github-explorer-mode special-mode github-explorer-name
   "Major mode for exploring GitHub repository on the fly."
