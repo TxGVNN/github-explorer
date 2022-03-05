@@ -123,7 +123,8 @@ From URL `https://github.com/akshaybadola/emacs-util'
   "Find file in REPO."
   (interactive)
   (let ((path (completing-read "Find file: " github-explorer-paths)))
-    (github-explorer--raw github-explorer-repository (format "/%s" path))))
+    (unless (eq (length path) 0)
+      (github-explorer--raw github-explorer-repository (format "/%s" path)))))
 
 (defun github-explorer-at-point()
   "Go to path in buffer GitHub tree."
@@ -144,7 +145,7 @@ From URL `https://github.com/akshaybadola/emacs-util'
         (setq path (concat path "/")))
     (message "%s" path)
     (if (string= (cdr (assoc 'type item)) "tree")
-        (github-explorer--tree repo url path)
+        (github-explorer--tree repo url path github-explorer-paths)
       (github-explorer--raw repo path))))
 
 (defun github-explorer--tree (repo url path paths)
