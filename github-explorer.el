@@ -241,7 +241,7 @@ pop-to-buffer(BUFFER-OR-NAME &OPTIONAL ACTION NORECORD)"
   (setq buffer-auto-save-file-name nil
         buffer-read-only t))
 
-(defun github-build-graphql (variable-query)
+(defun github-explorer-build-graphql (variable-query)
   "Build Graphql query.
 VARIABLE-QUERY"
   (list
@@ -267,14 +267,14 @@ If PREFIX is set, prompt repo"
          (if (or (not github-explorer-repository) (and github-explorer-repository prefix))
              (read-string "Repository: ")
            github-explorer-repository))
-        (query (read-string "Query: ")))
+        (query (read-string "Search: ")))
     (github-explorer-search-f repo query)))
 
 (defun github-explorer-search-f (&optional repo query)
   "Search QUERY in REPO by using Sourcegraph API."
   (let ((url-request-method (encode-coding-string "POST" 'us-ascii))
         (url-request-extra-headers '())
-        (url-request-data (json-encode (github-build-graphql (format "repo:^github.com/%s$ %s" repo query))))
+        (url-request-data (json-encode (github-explorer-build-graphql (format "repo:^github.com/%s$ %s" repo query))))
         (url-mime-charset-string (url-mime-charset-string)))
     (url-retrieve github-explorer-sourcegraph-url
                   #'github-explorer-search-response
@@ -312,7 +312,7 @@ If PREFIX is set, prompt repo"
             (setq-local github-explorer-repository repo)
             (switch-to-buffer (current-buffer))))))))
 
-;; (github-explorer-search-f "github.com/txgvnn/github-explorer" "defun")
+;; (github-explorer-search-f "txgvnn/github-explorer" "defun")
 
 (provide 'github-explorer)
 ;;; github-explorer.el ends here
