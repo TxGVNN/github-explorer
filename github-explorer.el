@@ -70,7 +70,13 @@
 
 (defvar github-explorer-buffer-temp nil)
 (defvar-local github-explorer-repository nil)
-(defvar-local github-explorer-paths nil)
+(defvar github-explorer-paths (make-hash-table :test 'equal))
+
+(defun github-explorer-paths--put (repo paths)
+  (puthash repo paths github-explorer-paths))
+
+(defun github-explorer-paths--get (repo)
+  (gethash repo github-explorer-paths))
 
 (defun github-explorer-util-package-try-get-package-url ()
   "Try and get single a package url under point.
@@ -116,13 +122,14 @@ From URL `https://github.com/akshaybadola/emacs-util'
                                                         (if (equal (cdr (assoc 'type x)) "blob")
                                                             (cdr (assoc 'path x))))
                                                       (cdr (assoc 'tree (json-read)))))))
+                          (github-explorer-paths--put repo paths)
                           (github-explorer--tree repo (format "https://api.github.com/repos/%s/git/trees/%s"
-                                                              repo "HEAD") "/" paths)))))))))
+                                                              repo "HEAD") "/")))))))))
 
 (defun github-explorer-find-file ()
   "Find file in REPO."
   (interactive)
-  (let ((path (completing-read "Find file: " github-explorer-paths)))
+  (let ((path (completing-read "Find file: " (github-explorer-paths--get github-explorer-repository))))
     (unless (eq (length path) 0)
       (github-explorer--raw github-explorer-repository (format "/%s" path)))))
 
@@ -145,10 +152,10 @@ From URL `https://github.com/akshaybadola/emacs-util'
         (setq path (concat path "/")))
     (message "%s" path)
     (if (string= (cdr (assoc 'type item)) "tree")
-        (github-explorer--tree repo url path github-explorer-paths)
+        (github-explorer--tree repo url path)
       (github-explorer--raw repo path))))
 
-(defun github-explorer--tree (repo url path paths)
+(defun github-explorer--tree (repo url path)
   "Get trees by URL of PATH github.
 This function will create *GitHub:REPO:* buffer"
   (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name repo path))
@@ -172,7 +179,6 @@ This function will create *GitHub:REPO:* buffer"
                           (goto-char (point-min))
                           (github-explorer-mode)
                           (setq-local github-explorer-repository repo)
-                          (setq-local github-explorer-paths paths)
                           (switch-to-buffer (current-buffer))))))))))
 
 (defun github-explorer--raw (repo path)
