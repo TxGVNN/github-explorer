@@ -57,6 +57,8 @@
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap (kbd "o") 'github-explorer-at-point)
     (define-key keymap (kbd "RET") 'github-explorer-at-point)
+    (define-key keymap (kbd "f") 'github-explorer-find-file)
+    (define-key keymap (kbd "s") 'github-explorer-search)
     (define-key keymap (kbd "n") 'next-line)
     (define-key keymap (kbd "p") 'previous-line)
     keymap)
@@ -66,8 +68,9 @@
   '((t (:inherit font-lock-function-name-face)))
   "Face for a directory.")
 
-(defvar github-explorer-repository nil)
 (defvar github-explorer-buffer-temp nil)
+(defvar-local github-explorer-repository nil)
+(defvar-local github-explorer-paths nil)
 
 (defun github-explorer-util-package-try-get-package-url ()
   "Try and get single a package url under point.
@@ -112,12 +115,15 @@ From URL `https://github.com/akshaybadola/emacs-util'
                                               (mapcar (lambda (x)
                                                         (if (equal (cdr (assoc 'type x)) "blob")
                                                             (cdr (assoc 'path x))))
-                                                      (cdr (assoc 'tree (json-read))))))
-                                      (path (completing-read "Find file: " paths)))
-                          (if (eq (length path) 0)
-                              (github-explorer--tree repo (format "https://api.github.com/repos/%s/git/trees/%s"
-                                                                  repo "HEAD") "/")
-                            (github-explorer--raw repo (format "/%s" path)))))))))))
+                                                      (cdr (assoc 'tree (json-read)))))))
+                          (github-explorer--tree repo (format "https://api.github.com/repos/%s/git/trees/%s"
+                                                              repo "HEAD") "/" paths)))))))))
+
+(defun github-explorer-find-file ()
+  "Find file in REPO."
+  (interactive)
+  (let ((path (completing-read "Find file: " github-explorer-paths)))
+    (github-explorer--raw github-explorer-repository (format "/%s" path))))
 
 (defun github-explorer-at-point()
   "Go to path in buffer GitHub tree."
@@ -141,7 +147,7 @@ From URL `https://github.com/akshaybadola/emacs-util'
         (github-explorer--tree repo url path)
       (github-explorer--raw repo path))))
 
-(defun github-explorer--tree (repo url path)
+(defun github-explorer--tree (repo url path paths)
   "Get trees by URL of PATH github.
 This function will create *GitHub:REPO:* buffer"
   (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name repo path))
@@ -165,6 +171,7 @@ This function will create *GitHub:REPO:* buffer"
                           (goto-char (point-min))
                           (github-explorer-mode)
                           (setq-local github-explorer-repository repo)
+                          (setq-local github-explorer-paths paths)
                           (switch-to-buffer (current-buffer))))))))))
 
 (defun github-explorer--raw (repo path)
