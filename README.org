@@ -2,12 +2,8 @@
 [[https://melpa.org/#/github-explorer][file:https://melpa.org/packages/github-explorer-badge.svg]]
 [[http://www.gnu.org/licenses/gpl-3.0.html][http://img.shields.io/:license-gpl3-blue.svg]]
 
-* Usage
-
-** DONE Find files in a repository
 ~M-x github-explorer melpa/melpa~
 
-If you select path ="", ~github-explorer~ will display root directory.
-
-** DONE Search pattern in a repository
-~M-x github-explorer-search~
+* Features
+- Find file in current repository
+- Search pattern in current repository
