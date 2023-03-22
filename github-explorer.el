@@ -93,7 +93,71 @@ From URL `https://github.com/akshaybadola/emacs-util'
   "Get repo user/name from URL."
   (string-join (last (split-string url "/") 2) "/"))
 
+(defun authinfo-machines ()
+  (mapcar
+   (lambda (entry)
+     (plist-get entry :host))
+   (auth-source-search :max 8  :user nil :require '(:user :secret)))  )
+
+(defun github-token ()
+  (interactive)
+  (let* ((github-server (completing-read "github server: "
+                                         (authinfo-machines))))
+    (nth  1 (auth-source-user-and-password github-server) )))
+
+(defun github-endpoint ()
+  (interactive)
+  (let* ((github-server (completing-read "github server: "
+                                         (authinfo-machines))))
+    (nth  0 (auth-source-user-and-password github-server) )))
+
+(defun github-host ()
+  (interactive)
+  (completing-read "github server: " (authinfo-machines)))
+
+
 ;;;###autoload
+
+(defun github-explorer-enterprise (&optional repo)
+  "Go REPO github."
+  (interactive (list (or (and (thing-at-point 'url t)
+                              (github-explorer-repo-from-url (thing-at-point 'url t)))
+                         (and (eq major-mode 'org-mode)
+                              (eq (org-element-type (org-element-context)) 'link)
+                              (github-explorer-repo-from-url
+                               (org-element-property :raw-link (org-element-context))))
+                         (and (eq major-mode 'package-menu-mode)
+                              (github-explorer-repo-from-url (github-explorer-util-package-try-get-package-url)))
+                         (thing-at-point 'symbol))))
+  (let* ((endpoint (github-endpoint))
+         (repo (read-string "Repository: " repo))
+         (auth-header (concat "Bearer " (github-token)))
+         (url-request-extra-headers `(("Authorization" . ,auth-header))))
+    (url-retrieve
+     ;; (format "https://api.github.com/repos/%s/git/trees/HEAD:?recursive=1" repo)
+     (format "%s/repos/%s/git/trees/HEAD:?recursive=1"  endpoint repo)
+     (lambda (arg)
+       (cond
+        ((equal :error (car arg))
+         (message arg))
+        (t
+         (with-current-buffer (current-buffer)
+           (goto-char (point-min))
+           (re-search-forward "^$")
+           (delete-region (+ 1 (point)) (point-min))
+           (goto-char (point-min))
+           (let* ((paths (remove nil
+                                 (mapcar (lambda (x)
+                                           (if (equal (cdr (assoc 'type x)) "blob")
+                                               (cdr (assoc 'path x))))
+                                         (cdr (assoc 'tree (json-read)))))))
+             (github-explorer-paths--put repo paths)
+             (github-explorer--tree repo
+                                    ;; (format "https://api.github.com/repos/%s/git/trees/%s" repo "HEAD")
+                                    (format "%s/repos/%s/git/trees/%s" endpoint repo "HEAD")
+                                    ;; (format "https://api.github.com/repos/%s/git/trees/%s" repo "HEAD")
+                                    "/")))))))))
+
 (defun github-explorer (&optional repo)
   "Go REPO github."
   (interactive (list (or (and (thing-at-point 'url t)
@@ -123,8 +187,9 @@ From URL `https://github.com/akshaybadola/emacs-util'
                                                             (cdr (assoc 'path x))))
                                                       (cdr (assoc 'tree (json-read)))))))
                           (github-explorer-paths--put repo paths)
-                          (github-explorer--tree repo (format "https://api.github.com/repos/%s/git/trees/%s"
-                                                              repo "HEAD") "/")))))))))
+                          (github-explorer--tree repo 
+                                                 (format "https://api.github.com/repos/%s/git/trees/%s" repo "HEAD")
+                                                 "/")))))))))
 
 (defun github-explorer-find-file ()
   "Find file in REPO."
@@ -132,6 +197,28 @@ From URL `https://github.com/akshaybadola/emacs-util'
   (let ((path (completing-read "Find file: " (github-explorer-paths--get github-explorer-repository))))
     (unless (eq (length path) 0)
       (github-explorer--raw github-explorer-repository (format "/%s" path)))))
+
+(defun github-explorer-at-point-enterprise ()
+  "Go to path in buffer GitHub tree."
+  (interactive)
+  (let (url path (pos 0) matches repo base-path item)
+    (setq item (get-text-property (line-beginning-position) 'invisible))
+    (setq url (cdr (assoc 'url item)))
+    (setq path (cdr (assoc 'path item)))
+
+    (setq repo (buffer-name))
+    (while (string-match ":\\(.+\\)\\*" repo pos)
+      (setq matches (concat (match-string 0 repo)))
+      (setq pos (match-end 0)))
+    (setq base-path (substring matches 1 (- (length matches) 1)))
+    (setq repo (car (split-string base-path ":")))
+    (setq path (format "%s%s"  (car (cdr (split-string base-path ":"))) path))
+    (if (string= (cdr (assoc 'type item)) "tree")
+        (setq path (concat path "/")))
+    (message "%s" path)
+    (if (string= (cdr (assoc 'type item)) "tree")
+        (github-explorer--tree repo url path)
+      (github-explorer--raw-enterprise repo path))))
 
 (defun github-explorer-at-point()
   "Go to path in buffer GitHub tree."
@@ -180,6 +267,40 @@ This function will create *GitHub:REPO:* buffer"
                           (github-explorer-mode)
                           (setq-local github-explorer-repository repo)
                           (switch-to-buffer (current-buffer))))))))))
+
+(defun github-explorer--raw-enterprise (repo path)
+  "Get raw of PATH in REPO github."
+  (let (url)
+    (let* ((endpoint (github-endpoint))
+           (token (github-token))
+           (auth-header (concat "Bearer " (github-token)))
+           (url-request-extra-headers `(("Accept" . "application/vnd.github.v3.raw")
+                                        ("Authorization" . ,auth-header)))
+           )
+      (setq url
+            ;; (format "https://raw.githubusercontent.com/%s/HEAD%s" repo path)
+            ;; "https://api.github.com/repos/%s/contents/path"
+            (format "%s/repos/%s/contents/%s" endpoint repo path)
+            )
+      (setq github-explorer-buffer-temp (format "*%s:%s:%s*" github-explorer-name repo path))
+      (url-retrieve url
+                    (lambda (arg)
+                      (cond
+                       ((equal :error (car arg))
+                        (message arg))
+                       (t
+                        (with-current-buffer (current-buffer)
+                          (let (data)
+                            (goto-char (point-min))
+                            (re-search-forward "^$")
+                            (delete-region (+ 1 (point)) (point-min))
+                            (goto-char (point-min))
+                            (setq data (buffer-string))
+                            (with-current-buffer (get-buffer-create github-explorer-buffer-temp)
+                              (insert data)
+                              (pop-to-buffer (current-buffer))
+                              (goto-char (point-min))
+                              (setq-local github-explorer-repository repo)))))))))))
 
 (defun github-explorer--raw (repo path)
   "Get raw of PATH in REPO github."
